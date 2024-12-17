@@ -30,7 +30,11 @@ public class GUI extends JFrame {
         ActionListener al = new ActionListener(){
             public void actionPerformed(ActionEvent e){
         	    var button = (JButton)e.getSource();
-        	    Point point = cells.entrySet().stream().filter(t -> t.getValue().equals(button)).map(Map.Entry::getKey).findFirst().orElse(null);
+        	    Point point = cells.entrySet().stream()
+                    .filter(t -> t.getValue().equals(button))
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElse(null);
                 logics.onClick(point);
                 updateGUI(logics.update());
             }
@@ -47,7 +51,7 @@ public class GUI extends JFrame {
                     logics = new LogicsImpl(size);
                     toRestart=false;
                 } else {
-                    Optional<List<Point>> toDisable=Optional.of(logics.checkDiagonal());
+                    Optional<List<Point>> toDisable=logics.checkDiagonal();
         	        if(toDisable.isPresent()){
                         toDisable.get().forEach(p -> cells.get(p).setEnabled(false));
                         toRestart=true;

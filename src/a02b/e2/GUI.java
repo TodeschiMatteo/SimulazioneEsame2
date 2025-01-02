@@ -3,20 +3,15 @@ package a02b.e2;
 import javax.swing.*;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.awt.*;
 import java.awt.event.*;
 
 public class GUI extends JFrame {
     
     private final Map<Point,JButton> cells = new HashMap<>();
-    int dimension;
-    Logics logics;
-    boolean toRestart=false;
+    private Logics logics;
     
     public GUI(int size) {
-        this.dimension=size;
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         this.setSize(100*size, 100*size);
         
@@ -34,27 +29,22 @@ public class GUI extends JFrame {
                     .filter(t -> t.getValue().equals(button))
                     .map(Map.Entry::getKey)
                     .findFirst()
-                    .orElse(null);
+                    .get();
                 logics.onClick(point);
-                updateGUI(logics.update());
+                updateGUI();
             }
         };
 
         ActionListener checkListener = new ActionListener(){
             public void actionPerformed(ActionEvent e){
-                if(toRestart){
-                    updateGUI(IntStream.range(0, 7)
-                    .boxed()
-                    .flatMap(x -> IntStream.range(0, 7).mapToObj(y -> new Point(x, y)))
-                    .collect(Collectors.toMap(point -> point, point -> false)));
+                if(logics.checkRestart()){
                     cells.forEach((p, b) -> cells.get(p).setEnabled(true));
                     logics = new LogicsImpl(size);
-                    toRestart=false;
+                    updateGUI();
                 } else {
                     Optional<List<Point>> toDisable=logics.checkDiagonal();
         	        if(toDisable.isPresent()){
                         toDisable.get().forEach(p -> cells.get(p).setEnabled(false));
-                        toRestart=true;
                     }
                 }
             }
@@ -74,7 +64,8 @@ public class GUI extends JFrame {
         this.setVisible(true);
     }
 
-    void updateGUI(Map<Point,Boolean> status){
+    void updateGUI(){
+        Map<Point,Boolean> status = logics.update();
         status.forEach((p, s) -> this.cells.get(p).setText(status.get(p)?"*":" "));
     }
 }

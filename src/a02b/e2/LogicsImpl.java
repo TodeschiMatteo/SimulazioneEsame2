@@ -10,9 +10,12 @@ import java.util.List;
 
 public class LogicsImpl implements Logics{
 
-    final Map<Point, Boolean> cells = new HashMap<>();
+    private final Map<Point, Boolean> cells = new HashMap<>();
+    private final int size;
+    private boolean toReload = false;
 
     LogicsImpl(final int size){
+        this.size = size;
         for (int i=0; i<size; i++){
             for (int j=0; j<size; j++){
                 this.cells.put(new Point(j, i), false);
@@ -31,65 +34,59 @@ public class LogicsImpl implements Logics{
 
     @Override
     public Optional<List<Point>> checkDiagonal() {
-        // Controlla le diagonali principali (dall'alto a sinistra al basso a destra)
-        for (int k = 0; k < 7; k++) {
-            List<Point> diagonal = new ArrayList<>();
-            int filledCount = 0;
-            for (int i = 0; i <= k; i++) {
-                Point point = new Point(i, k - i);
-                diagonal.add(point);
-                if (cells.getOrDefault(point, false)) {
-                    filledCount++;
-                }
+        int x=0;
+        int y=0;
+        int count=0;
+        // upLeft-doRight diagonals (\)
+        // Compressed 4 cycle in 2 using reflection propiety of Coordinates
+        for(y=size-1; y>=0; y--){
+            List<Point> list = new ArrayList<>();
+            for(count = 0; count< size - y; count++){
+                list.add(new Point(x+count, y+count));
             }
-            if (filledCount == 3) {
-                return Optional.of(diagonal);
+            var diagonalToDisable = threeOnDiagonal(list);
+            if(diagonalToDisable.isPresent()){return diagonalToDisable;}
+            list = new ArrayList<>();
+            for(count = 0; count< size - y; count++){
+                list.add(new Point(y+count, x+count));
             }
+            diagonalToDisable = threeOnDiagonal(list);
+            if(diagonalToDisable.isPresent()){return diagonalToDisable;}
         }
-        for (int k = 1; k < 7; k++) {
-            List<Point> diagonal = new ArrayList<>();
-            int filledCount = 0;
-            for (int i = 0; i <= 6 - k; i++) {
-                Point point = new Point(k + i, 7 - i);
-                diagonal.add(point);
-                if (cells.getOrDefault(point, false)) {
-                    filledCount++;
-                }
+        // upRight-doLeft diagonals (/)
+        // Compressed 4 cycle in 2 using reflection propiety of Coordinates
+        y=0;
+        for(x=0; x<size; x++){
+            List<Point> list = new ArrayList<>();
+            for(count = 0; count <= x/2; count++){
+                    list.add(new Point(x-count, count));
+                    list.add(new Point(count, x-count));
             }
-            if (filledCount == 3) {
-                return Optional.of(diagonal);
+            list = new ArrayList<>();
+            var diagonalToDisable = threeOnDiagonal(list);
+            if(diagonalToDisable.isPresent()){return diagonalToDisable;}
+            for(count = 0; count <= (size-x)/2; count++){
+                list.add(new Point(size-1-count, x+count));
+                list.add(new Point(x+count, size-1-count));
             }
-        }
-
-        // Controlla le diagonali secondarie (dall'alto a destra al basso a sinistra)
-        for (int k = 0; k < 7; k++) {
-            List<Point> diagonal = new ArrayList<>();
-            int filledCount = 0;
-            for (int i = 0; i <= k; i++) {
-                Point point = new Point(i, i - k + 7);
-                diagonal.add(point);
-                if (cells.getOrDefault(point, false)) {
-                    filledCount++;
-                }
-            }
-            if (filledCount == 3) {
-                return Optional.of(diagonal);
-            }
-        }
-        for (int k = 1; k < 7; k++) {
-            List<Point> diagonal = new ArrayList<>();
-            int filledCount = 0;
-            for (int i = 0; i <= 6 - k; i++) {
-                Point point = new Point(k + i, i);
-                diagonal.add(point);
-                if (cells.getOrDefault(point, false)) {
-                    filledCount++;
-                }
-            }
-            if (filledCount == 3) {
-                return Optional.of(diagonal);
-            }
+            diagonalToDisable = threeOnDiagonal(list);
+            if(diagonalToDisable.isPresent()){return diagonalToDisable;}
         }
         return Optional.empty();
     }
+
+    private Optional<List<Point>> threeOnDiagonal(List<Point> list){
+        if(list.stream().distinct().map(e -> this.cells.get(e)).filter(e -> e.equals(true)).count() == 3){
+            this.toReload = true;
+            return Optional.of(list);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public boolean checkRestart() {
+        return this.toReload;
+    }
+
 }
